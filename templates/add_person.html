@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Добавление человека
+{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <h1>Добавление человека</h1>
+    <form method="post">
+        <input type="text" name="first_name" id="first_name", placeholder="Введите имя", class="form-control"><br>
+        <input type="text" name="second_name" id="second_name", placeholder="Введите фамилию", class="form-control"><br>
+        <input type="submit" class="btn btn-success" value="Отправить">
+    </form>
+</div>
+{% endblock %}
