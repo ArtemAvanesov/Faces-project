@@ -145,7 +145,7 @@ if faces is not None:
     gender = predict_gender(gender_model, embedding)
     person_embedding = predict_person(person_model, embedding)
     write_annoy(person_embedding)
-    annoy_index = read_annoy(person_embedding[0])
+    annoy_index = read_annoy(person_embedding)
 
     print("Возраст: ", age)
     print("Пол: ", gender)
