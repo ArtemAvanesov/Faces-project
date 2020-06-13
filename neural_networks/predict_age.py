@@ -1,7 +1,6 @@
-from keras.models import load_model
+import numpy as np
 
 
-def predict_age(embedding):
-    age_model = load_model('./neural_networks/models/AGE_PART.h5')
-    age = age_model.predict(embedding)
+def predict_age(age_model, embedding):
+    age = age_model.predict(np.array(embedding))
     return age

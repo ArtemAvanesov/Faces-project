@@ -1,7 +1,4 @@
-from keras.models import load_model
-
-
-def predict_gender(embedding):
-    gender_model = load_model('./neural_networks/models/FEMALE_MALE_PART.h5')
+def predict_gender(gender_model, embedding):
     gender = gender_model.predict(embedding)
+    gender = (gender > 0.5).astype(int)
     return gender
