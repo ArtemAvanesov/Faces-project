@@ -15,20 +15,23 @@ def crop_rectangle(image):
             bottom = d.bottom()
             faces.append([left, top, right, bottom])
 
-        if (faces[0][0] == 0 and faces[0][1] == 0 and faces[0][2] == 0 and faces[0][3] == 0) or i > 0:
+        if len(faces) == 0:
             return None
         else:
             return faces
 
     def crop(img, rectangles):
         img_faces = []
+        img = Image.fromarray(img)
         for rectangle in rectangles:
-            img = Image.fromarray(img)
-            img_face = img.crop((rectangle[0], rectangle[1], rectangle[2], rectangle[3]))
+            img_for_crop = img.copy()
+            img_face = img_for_crop.crop((rectangle[0], rectangle[1], rectangle[2], rectangle[3]))
             img_face = img_face.resize((224, 224))
             img_faces.append(np.array(img_face))
         return img_faces
 
     small_faces = find_face_rectangle(image)
+    if small_faces is None:
+        return None
     images = crop(image, small_faces)
     return images
