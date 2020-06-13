@@ -144,7 +144,9 @@ if faces is not None:
     age = predict_age(age_model, embedding)
     gender = predict_gender(gender_model, embedding)
     person_embedding = predict_person(person_model, embedding)
-    write_annoy(person_embedding)
+    indices = [0, 2, 5]  # индексы с базы
+    all_embeddings = person_embedding  # все эмбединги с базы
+    write_annoy(all_embeddings, indices)  # вызывается только при добавлении/удалении в базе
     annoy_index = read_annoy(person_embedding)
 
     print("Возраст: ", age)
