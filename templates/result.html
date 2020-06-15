@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Главная страница
+{% endblock %}
+
+{% block body %}
+
+<div class="container mt-5">
+    <h1 class="page-title" id="page-title">Результаты</h1>
+    {% if persons|length == 0%}
+    <p>На фотограции лиц не найдено!</p>
+    {% else %}
+    <p>Найдено лиц: {{ persons|length }}</p>
+     <ul class="list-group">
+    {% for person in persons%}
+         <li class="list-group-item">
+             <div class="media">
+                 <img src="{{ person[0] }}" class="d-flex mr-3">
+                 <div class="media-body">
+                     <p>Возраст: {{ person[1][0] }}</p>
+                     {% if person[2] == 0 %}
+                     <p>Пол: женский </p>
+                     {% else %}
+                     <p>Пол: мужской </p>
+                     {% endif %}
+                     {% if person[3] == -1 or person[4] > 170 %}
+                     <p>Человек в базе не найден!</p>
+                     {% else %}
+                     <p>Имя: {{ person[3] }}</p>
+                     <p>Расстояние до ближайшего: {{ person[4] }}</p>
+                     {% endif %}
+                 </div>
+             </div>
+         </li>
+    {% endfor %}
+     </ul>
+    {% endif %}
+</div>
+{% endblock %}

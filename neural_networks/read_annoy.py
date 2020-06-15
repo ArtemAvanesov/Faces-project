@@ -7,7 +7,10 @@ def read_annoy(embedding):
     u.load('./neural_networks/models/saved_annoy.ann')  # super fast, will just mmap the file
     n = 1  # Num neighbors
     neighbors = []
+    distances = []
     for emb in embedding:
-        neighbors.append(u.get_nns_by_vector(emb, n, search_k=-1, include_distances=False))
+        neighbor, dist = u.get_nns_by_vector(emb, n, search_k=-1, include_distances=True)
+        neighbors.append(neighbor)
+        distances.append(dist)
 
-    return neighbors
+    return neighbors, distances

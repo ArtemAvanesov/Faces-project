@@ -18,26 +18,24 @@
 		});
 	</script>
 <div class="container mt-5">
-    <h1>Добавление человека</h1>
-<!--    если изображение не добавлено, конпка отправить не активна -->
-<!--    этот код выводил сообщение, что изображения не добавлено. когда кнопка была всегда активна -->
-<!--    {% if form.photo_hidden.errors|length > 0 %}-->
-<!--    <div class="alert alert-danger" role="alert">-->
-<!--        Изображение не добавлено!!!-->
-<!--    </div>-->
-<!--    {% endif%}-->
+    <h1 class="page-title" id="page-title">Добавление человека</h1>
+    {% if photo_error %}
+    <div class="alert alert-danger" role="alert">
+        На фото не найдено лиц или лиц найдено несколько!!!
+    </div>
+    {% endif%}
     <form method="post" enctype="multipart/form-data">
         {{ form.first_name(class_="form-control", placeholder="Введите имя") }}<br>
-        {{ form.second_name(placeholder="Введите фамилию", class_="form-control") }}<br>
-        {{ form.photo_hidden() }}<br>
-        <h3>Загрузите фотографию или сделайте снимок с вебкамеры</h3>
-        <input type="file" id="'photo" name="photo" onchange="handleFiles(this.files)" class="form-control-file"><br>
-        <input type="button" id="camera_access" value="Получить доступ к камере" onClick="setup()" class="btn btn-primary"><br>
-        <div id="my_camera"></div><br>
-        <input type="button" id="take_snap" value="Сделать снимок" onClick="take_snapshot()" style="display:none" class="btn btn-primary"><br>
-        <div id="results">Ваше фото появится тут...</div><br>
-        <input type="submit" id="button" value="Отправить" disabled="disabled" class="btn btn-success"><br>
-    </form>
+        {{ form.second_name(placeholder="Введите фамилию", class_="form-control") }}
+        {{ form.photo_hidden() }}
+        <br><h2>Загрузите фотографию или сделайте снимок с вебкамеры</h2><br>
+        <input type="file" style="width:200" id="photo" name="photo" onchange="handleFiles(this.files)" class="form-control-file">
+        <img id="camera_access" style="vertical-align: top; width: 33pt" class="btn btn-primary" src="/static/img/camera.png" onclick="setup()"><br>
+        <div id="my_camera", style="margin-top:20p; margin-bottom:20pt; margin-top:20pt"></div>
+        <input type="button" id="take_snap" value="Сделать снимок" onClick="take_snapshot()" style="display:none; width:320px" class="btn btn-primary"><br>
+        <div id="results" style="display:none"></div>
+        <input type="submit" id="button" value="Отправить" disabled="disabled" style="width:320px" class="btn btn-success"><br>
+    </form><br>
 </div>
 
 <script language="JavaScript">
@@ -47,7 +45,8 @@
                 reader.onload = function (e) {
                     document.getElementById('results').innerHTML =
                         '<h2>Ваше изображение:</h2>' +
-                        '<img src="'+e.target.result+'" class="img-fluid rounded mx-auto d-block"/>';
+                        '<img src="'+e.target.result+'" class="taken-picture" style="margin-bottom: 20pt" id="image_block"/>';
+                    document.getElementById('results').style = "";
                     var raw_image_data =  e.target.result.replace(/^data\:image\/\w+\;base64\,/, '');
                     document.getElementById('photo_hidden').value = raw_image_data;
                     document.getElementById('button').disabled = false;
@@ -57,8 +56,9 @@
             }
 
             function setup() {
-                    document.getElementById('camera_access').style= "display:none"
-                    document.getElementById('take_snap').style= ""
+                    document.getElementById('camera_access').onClick=""
+                    document.getElementById('take_snap').style= "width:320px; display: inline"
+
                     Webcam.reset();
                     Webcam.attach( '#my_camera' );
                 }
@@ -69,9 +69,11 @@
                     var raw_image_data = data_uri.replace(/^data\:image\/\w+\;base64\,/, '');
                     document.getElementById('photo_hidden').value = raw_image_data;
                     document.getElementById('button').disabled = false;
+                    document.getElementById('button').style = "width:320px; display: inline";
+                    document.getElementById('results').style = "";
                     document.getElementById('results').innerHTML =
                         '<h2>Ваше изображение:</h2>' +
-                        '<img src="'+data_uri+'" class="img-fluid rounded mx-auto d-block"/>';
+                        '<img src="'+data_uri+'" class="taken-picture" style="margin-bottom: 10pt" id="image_block"/>';
                 } );
             }
     </script>

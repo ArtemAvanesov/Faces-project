@@ -6,10 +6,15 @@
 
 {% block body %}
 <div class="container mt-5">
-    <h1>Сохраненные в базе люди</h1>
+    <h1 class="page-title" id="page-title">Сохраненные в базе люди</h1>
     {% if deleted %}
     <div class="alert alert-success" role="alert">
         Запись удалена!
+    </div>
+    {% endif %}
+    {% if added %}
+    <div class="alert alert-success" role="alert">
+        Запись добавлена!
     </div>
     {% endif %}
     {% if persons|length >0 %}

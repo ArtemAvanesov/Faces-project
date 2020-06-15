@@ -2,13 +2,45 @@ nav#header_bar {
     background: black;
 }
 
-
-a#my_link{
+a#my_link1, a#my_link2, a#my_link3, a#my_link4 {
     color: #89c4ff!important;
     text-decoration: none;
 }
 
-a#my_link:hover{
+a#my_link1:hover, a#my_link2:hover, a#my_link3:hover, a#my_link4:hover{
     color: #ffffff!important;
     text-decoration: none;
+}
+
+#image_block {
+    max-width : 400px!important;
+    max-height : 400px!important;
+}
+
+h1#page-title {
+    padding-bottom: 20pt;
+    font-size: 25pt;
+}
+
+h2 {
+    font-size: 20pt;
+}
+
+input#take_snap {
+    margin-bottom:20pt;
+}
+
+input#photo {
+    width: 200pt;
+    background: lightblue;
+    border-radius: .25rem;
+    height: 30p;
+    border: 1px solid;
+    line-height: 18pt;
+}
+
+.form-control-file, .form-control-range {
+    border: 2pt;
+    display: inline;
+    width: 230pt;
 }

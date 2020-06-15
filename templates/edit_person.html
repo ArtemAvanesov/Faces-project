@@ -5,17 +5,81 @@
 {% endblock %}
 
 {% block body %}
+	<!-- First, include the Webcam.js JavaScript Library -->
+	<script type="text/javascript" src="/static/jss/webcam.min.js"></script>
+	<!-- Configure a few settings and attach camera -->
+	<script language="JavaScript">
+		Webcam.set({
+			width: 320,
+			height: 240,
+			image_format: 'jpeg',
+			jpeg_quality: 90
+		});
+	</script>
+
 <div class="container mt-5">
-    <h1>Редактирование данных человека</h1>
+    <h1>Редактирование данных человека</h1><br>
     {% if edited %}
     <div class="alert alert-success" role="alert">
         Данные сохранены!
     </div>
     {% endif %}
+    {% if photo_err %}
+    <div class="alert alert-danger" role="alert">
+        Данные не сохранены! На фото не найдено лиц или лиц больше одного!
+    </div>
+    {% endif %}
+    {% if photo_edit %}
+    <div class="alert alert-success" role="alert">
+        Фотография обновлена!
+    </div>
+    {% endif %}
     <form method="post">
-        <input type="text" name="first_name" id="first_name", placeholder="Введите имя", class="form-control", value="{{ person.first_name }}"><br>
-        <input type="text" name="second_name" id="second_name", placeholder="Введите фамилию", class="form-control", value="{{ person.second_name }}"><br>
-        <input type="submit" class="btn btn-success" value="Сохранить">
-    </form>
+        <input type="text" name="first_name" id="first_name", placeholder="Введите имя", class="form-control", value="{{ person.first_name }}" required><br>
+        <input type="text" name="second_name" id="second_name", placeholder="Введите фамилию", class="form-control", value="{{ person.second_name }}" required><br>
+        <input type="hidden" name="photo_hidden" id="photo_hidden">
+        <h3>Загрузите новую фотографию или сделайте снимок с вебкамеры</h3><br>
+        <input type="file" style="width:200" id="photo" name="photo" onchange="handleFiles(this.files)" class="form-control-file">
+        <img id="camera_access" style="vertical-align: top; width: 33pt" class="btn btn-primary" src="/static/img/camera.png" onclick="setup()"><br>
+        <div id="my_camera", style="margin-top:20p; margin-bottom:20pt; margin-top:20pt"></div>
+        <input type="button" id="take_snap" value="Сделать снимок" onClick="take_snapshot()" style="display:none; width:320px" class="btn btn-primary"><br>
+        <div id="results" style="display:none"></div><br>
+        <input type="submit" class="btn btn-success" style="width:320px" value="Сохранить"><br>
+    </form><br>
 </div>
+
+<script language="JavaScript">
+            function handleFiles(files) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    document.getElementById('results').innerHTML =
+                        '<h2>Ваше изображение:</h2>' +
+                        '<img src="'+data_uri+'" class="taken-picture" style="margin-bottom: 20pt" id="image_block"/>';
+                    document.getElementById('results').style = "";
+                    var raw_image_data =  e.target.result.replace(/^data\:image\/\w+\;base64\,/, '');
+                    document.getElementById('photo_hidden').value = raw_image_data;
+                }
+
+                reader.readAsDataURL(files[0]);
+            }
+
+            function setup() {
+                    document.getElementById('take_snap').style= "width:320px; display: inline"
+                    Webcam.reset();
+                    Webcam.attach( '#my_camera' );
+                }
+            function take_snapshot() {
+                // take snapshot and get image data
+                Webcam.snap( function(data_uri) {
+                    // display results in page
+                    var raw_image_data = data_uri.replace(/^data\:image\/\w+\;base64\,/, '');
+                    document.getElementById('photo_hidden').value = raw_image_data;
+                    document.getElementById('results').style = "";
+                    document.getElementById('results').innerHTML =
+                        '<h2>Ваше изображение:</h2>' +
+                        '<img src="'+data_uri+'" class="taken-picture" style="margin-bottom: 10pt" id="image_block"/>';
+                } );
+            }
+    </script>
 {% endblock %}

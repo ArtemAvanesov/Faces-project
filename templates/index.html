@@ -17,15 +17,16 @@
 		});
 	</script>
     <div class="container mt-5">
-        <h1>Загрузите фотографию или сделайте снимок с вебкамеры</h1>
+        <h1 class="page-title" id="page-title">Загрузите фотографию или сделайте снимок с вебкамеры</h1>
         <form method="post">
+            <input type="file" style="width:200" id="photo" name="photo" onchange="handleFiles(this.files)" class="form-control-file">
+            <img id="camera_access" style="vertical-align: top; width: 33pt" class="btn btn-primary" src="./static/img/camera.png" onclick="setup()"><br>
             <input type="hidden" id="cam_photo" name="cam_photo" value="" style="display:none"><br>
-            <input type="file" id="'photo" name="photo" onchange="handleFiles(this.files)" class="form-control-file"><br>
-            <input type="button" id="camera_access" value="Получить доступ к камере" onClick="setup()" class="btn btn-primary"><br>
             <div id="my_camera"></div><br>
-            <input type="button" id="take_snap" value="Сделать снимок" onClick="take_snapshot()" style="display:none" class="btn btn-primary"><br>
-            <div id="results">Ваше фото появится тут...</div><br>
-            <input type="submit" id="button" value="Отправить фото" disabled="disabled" class="btn btn-success"><br>
+
+            <input type="button" style="display:none; width:320px" id="take_snap" value="Сделать снимок" onClick="take_snapshot()" class="btn btn-primary">
+            <div id="results" style="display:none"></div><br>
+            <input style="display:none; width:320px" type="submit" id="button" value="Получить результат" disabled="disabled" class="btn btn-success"><br>
         </form>
         <br>
     </div>
@@ -36,8 +37,10 @@
 
                 reader.onload = function (e) {
                     document.getElementById('results').innerHTML =
-                        '<h2>Ваше изображение:</h2>' +
-                        '<img src="'+e.target.result+'" class="img-fluid rounded mx-auto d-block"/>';
+                        '<h2 class="second-title" id="second-title">Ваше изображение:</h2>' +
+                        '<img src="'+e.target.result+'" class="taken-picture" id="image_block"/>';
+                    document.getElementById('results').style = "";
+                    document.getElementById('button').style = "width:320px; display: inline";
                     var raw_image_data =  e.target.result.replace(/^data\:image\/\w+\;base64\,/, '');
                     document.getElementById('cam_photo').value = raw_image_data;
                     document.getElementById('button').disabled = false;
@@ -47,8 +50,8 @@
             }
 
             function setup() {
-                    document.getElementById('camera_access').style= "display:none"
-                    document.getElementById('take_snap').style= ""
+                    document.getElementById('camera_access').onClick=""
+                    document.getElementById('take_snap').style= "width:320px; display: inline"
                     Webcam.reset();
                     Webcam.attach( '#my_camera' );
                 }
@@ -59,9 +62,11 @@
                     var raw_image_data = data_uri.replace(/^data\:image\/\w+\;base64\,/, '');
                     document.getElementById('cam_photo').value = raw_image_data;
                     document.getElementById('button').disabled = false;
+                    document.getElementById('results').style = "";
+                    document.getElementById('button').style = "width:320px; display: inline";
                     document.getElementById('results').innerHTML =
                         '<h2>Ваше изображение:</h2>' +
-                        '<img src="'+data_uri+'" class="img-fluid rounded mx-auto d-block"/>';
+                        '<img src="'+data_uri+'" class="taken-picture" id="image_block"/>';
                 } );
             }
     </script>

@@ -1,126 +1,9 @@
-# from flask import Flask, render_template, url_for, request, redirect
-# from flask_sqlalchemy import SQLAlchemy
-# import forms
-# from datetime import datetime
-# import base64
-#
-# app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///face.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# db = SQLAlchemy(app)
-#
-#
-# class Embeddings(db.Model):
-#     __tablename__ = 'embeddings'
-#     __table_args__ = {'extend_existing': True}
-#     # LOC_CODE = db.Column(db.Integer, primary_key=True)
-#     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-#     first_name = db.Column(db.String(100), nullable=False)
-#     second_name = db.Column(db.String(100), nullable=False)
-#
-#     # person_embedding = db.Column(db.Text, nullable=False)
-#     # data_add = db.Column(db.DateTime, default=datetime.utcnow)
-#
-#     def __repr__(self):
-#         return '<Embeddings %r>' % self.id
-#
-#
-# @app.route('/')
-# @app.route('/home', methods=['POST', 'GET'])
-# def index():
-#     return render_template("index.html")
-#
-#
-# @app.route('/about')
-# def about():
-#     if request.method == "POST":
-#         b64_string = request.form['cam_photo']
-#         image_data = bytes(b64_string, encoding="ascii")
-#         # TODO добавить идентификатор для файла
-#         with open("temp_photos/imageToSave.jpg", "wb") as fh:
-#             fh.write(base64.decodebytes(image_data))
-#     return render_template("about.html")
-#
-#
-# @app.route('/person/add', methods=['POST', 'GET'])
-# def add_person():
-#     form = forms.AddPersonForm(request.form, meta={'csrf': False})
-#     if request.method == "POST" and form.validate():
-#         first_name = request.form['first_name']
-#         second_name = request.form['second_name']
-#         b64_string = request.form['photo_hidden']
-#         image_data = bytes(b64_string, encoding="ascii")
-#         # TODO добавить идентификатор для файла
-#         with open("temp_photos/imageToSave.jpg", "wb") as fh:
-#             fh.write(base64.decodebytes(image_data))
-#         embedding = Embeddings(first_name=first_name, second_name=second_name)
-#         try:
-#             db.session.add(embedding)
-#             db.session.commit()
-#             return redirect("/person/saved")
-#         except:
-#             return "При добавлении человека произошла ошибка"
-#     else:
-#         return render_template("add_person.html", form=form)
-#
-#
-# @app.route('/person/saved')
-# def saved_persons():
-#     deleted = request.args.get('deleted', default=False, type=bool)
-#     persons = Embeddings.query.order_by(Embeddings.second_name).all()
-#     return render_template("saved_persons.html", persons=persons, deleted=deleted)
-#
-#
-# @app.route('/person/delete/<int:id>')
-# def delete_person(id):
-#     person = Embeddings.query.get_or_404(id)
-#     try:
-#         db.session.delete(person)
-#         db.session.commit()
-#         return redirect("/person/saved?deleted=True")
-#     except:
-#         return "При удалении произошла ошибка!"
-#
-#
-# @app.route('/person/edit/<int:id>', methods=['POST', 'GET'])
-# def edit_person(id):
-#     person = Embeddings.query.get_or_404(id)
-#     if request.method == "POST":
-#         person.first_name = request.form['first_name']
-#         person.second_name = request.form['second_name']
-#         try:
-#             db.session.commit()
-#             return render_template("edit_person.html", person=person, edited=True)
-#         except:
-#             return "При редактировании данных произошла ошибка"
-#     else:
-#         return render_template("edit_person.html", person=person, edited=False)
-#
-# # Можно убрать, было для тестов
-# @app.route('/cam', methods=['POST', 'GET'])
-# def cam_func():
-#     if request.method == "POST":
-#         b64_string = request.form['cam_photo']
-#         image_data = bytes(b64_string, encoding="ascii")
-#         # TODO добавить идентификатор для файла
-#         with open("temp_photos/imageToSave.jpg", "wb") as fh:
-#             fh.write(base64.decodebytes(image_data))
-#     return render_template("webcam_exp.html")
-
-
-# @app.route('/user/<string:name>/<int:id>')
-# def user(name, id):
-#     return "User page " + name + " - " + str(id)
-
-
-# if __name__ == "__main__":
-#     app.run(debug=True)
-
-#-------------------------------------
-
-from skimage import io
+from flask import Flask, render_template, url_for, request, redirect
+from flask_sqlalchemy import SQLAlchemy
+import forms
+from io import BytesIO
+from PIL import Image
 import numpy as np
-import matplotlib.pyplot as plt
 from neural_networks.do_embedding import do_embedding
 from neural_networks.predict_age import predict_age
 from neural_networks.predict_gender import predict_gender
@@ -128,34 +11,233 @@ from neural_networks.predict_person import predict_person
 from neural_networks.write_annoy import write_annoy
 from neural_networks.read_annoy import read_annoy
 from work_with_cam.crop_rectangle import crop_rectangle
-from keras.models import load_model
+from tensorflow.keras.models import load_model
+import json
+import base64
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///face.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 embedding_model = load_model('./neural_networks/models/BASE_MODEL.h5')
-age_model = load_model('./neural_networks/models/AGE_PART.h5')
+age_model = load_model('./neural_networks/models/AGE_PART_2.h5')
 gender_model = load_model('./neural_networks/models/FEMALE_MALE_PART.h5')
 person_model = load_model('./neural_networks/models/PERSONALITY_PART.h5')
 
-img = io.imread("./temp_photos/3faces.jpg")
-faces = crop_rectangle(img)
-if faces is not None:
-    img = np.array(faces) / 255
 
-    embedding = do_embedding(embedding_model, [img])
-    age = predict_age(age_model, embedding)
-    gender = predict_gender(gender_model, embedding)
-    person_embedding = predict_person(person_model, embedding)
-    indices = [0, 2, 5]  # индексы с базы
-    all_embeddings = person_embedding  # все эмбединги с базы
-    write_annoy(all_embeddings, indices)  # вызывается только при добавлении/удалении в базе
-    annoy_index = read_annoy(person_embedding)
+class Embeddings(db.Model):
+    __tablename__ = 'embeddings'
+    __table_args__ = {'extend_existing': True}
+    # LOC_CODE = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    second_name = db.Column(db.String(100), nullable=False)
+    person_embedding = db.Column(db.Text, nullable=False)
 
-    print("Возраст: ", age)
-    print("Пол: ", gender)
-    print("Индекс ближайшего в базе: ", annoy_index)
-    print("Размерность эмбедингов: ", np.array(person_embedding).shape)
+    # data_add = db.Column(db.DateTime, default=datetime.utcnow)
 
-    for im in img:
-        plt.imshow(im)
-        plt.show()
-else:
-    print("No faces!")
+    def __repr__(self):
+        return '<Embeddings %r>' % self.id
+
+
+@app.route('/', methods=['POST', 'GET'])
+@app.route('/home', methods=['POST', 'GET'])
+def index():
+    if request.method == "POST":
+        b64_string = request.form['cam_photo']
+        img = Image.open(BytesIO(base64.b64decode(b64_string)))
+        faces = crop_rectangle(np.array(img))
+        if faces is not None:
+            img = np.array(faces) / 255
+            embedding = do_embedding(embedding_model, [img])
+            age = predict_age(age_model, embedding)
+            gender = predict_gender(gender_model, embedding)
+            person_embedding = predict_person(person_model, embedding)
+            annoy_index, distances = read_annoy(person_embedding)
+            annoy_index_name = []
+            annoy_distances = []
+            for index, dist in zip(annoy_index, distances):
+                try:
+                    person = Embeddings.query.get(index[0])
+                    annoy_index_name.append(person.first_name + ' ' + person.second_name)
+                    annoy_distances.append(dist)
+                except:
+                    print("Ошибка при поиске соответствия")
+                    annoy_index_name.append(-1)
+                    annoy_distances.append(-1)
+            images_base64 = []
+            for image in img:
+                buffered = BytesIO()
+                image = image * 255
+                Image.fromarray(image.astype(np.uint8)).save(buffered, format="JPEG", mode="RGB")
+                img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
+                img_str = 'data:image/jpeg;base64,' + img_str
+                images_base64.append(img_str)
+            persons = []
+            for img, a, g, ai, ad in zip(images_base64, age, gender, annoy_index_name, annoy_distances):
+                a = np.round(a, 1)
+                for i in range(0, len(a), 1):
+                    if a[i] == 0.0:
+                        a[i] = 0.1
+                persons.append([img, a, g, ai, np.round(ad[0], 1)])
+            return render_template("result.html", persons=persons)
+        return render_template("result.html", persons=[])
+    return render_template("index.html")
+
+
+@app.route('/about')
+def about():
+    return render_template("about.html")
+
+
+@app.route('/person/add', methods=['POST', 'GET'])
+def add_person():
+    form = forms.AddPersonForm(request.form, meta={'csrf': False})
+    if request.method == "POST" and form.validate():
+        b64_string = request.form['photo_hidden']
+        img = Image.open(BytesIO(base64.b64decode(b64_string)))
+        faces = crop_rectangle(np.array(img))
+        if faces is not None and len(faces) == 1:
+            img = np.array(faces) / 255
+            embedding = do_embedding(embedding_model, [img])
+            person_embedding = predict_person(person_model, embedding)[0]
+            first_name = request.form['first_name']
+            second_name = request.form['second_name']
+            person_embedding = json.dumps(person_embedding.tolist())
+            person = Embeddings(first_name=first_name, second_name=second_name, person_embedding=person_embedding)
+            try:
+                db.session.add(person)
+                db.session.commit()
+                persons = Embeddings.query.order_by(Embeddings.second_name).all()
+                emb_arr = []
+                index_arr = []
+                for person in persons:
+                    emb_arr.append(json.loads(person.person_embedding))
+                    index_arr.append(person.id)
+                write_annoy(emb_arr, index_arr)
+                return redirect("/person/saved?added=True")
+            except:
+                return "При добавлении человека произошла ошибка"
+        else:
+            return render_template("add_person.html", form=form, photo_error=True)
+    else:
+        return render_template("add_person.html", form=form, photo_error=False)
+
+
+@app.route('/person/saved')
+def saved_persons():
+    deleted = request.args.get('deleted', default=False, type=bool)
+    added = request.args.get('added', default=False, type=bool)
+    persons = Embeddings.query.order_by(Embeddings.second_name).all()
+    return render_template("saved_persons.html", persons=persons, deleted=deleted, added=added)
+
+
+@app.route('/person/delete/<int:id>')
+def delete_person(id):
+    person = Embeddings.query.get_or_404(id)
+    try:
+        db.session.delete(person)
+        db.session.commit()
+        persons = Embeddings.query.order_by(Embeddings.second_name).all()
+        emb_arr = []
+        index_arr = []
+        for person in persons:
+            emb_arr.append(json.loads(person.person_embedding))
+            index_arr.append(person.id)
+        write_annoy(emb_arr, index_arr)
+        return redirect("/person/saved?deleted=True")
+    except:
+        return "При удалении произошла ошибка!"
+
+
+@app.route('/person/edit/<int:id>', methods=['POST', 'GET'])
+def edit_person(id):
+    print(id)
+    person = Embeddings.query.get_or_404(id)
+    if request.method == "POST":
+        person.first_name = request.form['first_name']
+        person.second_name = request.form['second_name']
+        if len(request.form['photo_hidden']) == 0:
+            try:
+                db.session.commit()
+                return render_template("edit_person.html", person=person, edited=True, photo_err=False,
+                                       photo_edit=False)
+            except:
+                return "При редактировании данных произошла ошибка"
+        else:
+            b64_string = request.form['photo_hidden']
+            img = Image.open(BytesIO(base64.b64decode(b64_string)))
+            faces = crop_rectangle(np.array(img))
+            if faces is not None and len(faces) == 1:
+                img = np.array(faces) / 255
+                embedding = do_embedding(embedding_model, [img])
+                person_embedding = predict_person(person_model, embedding)[0]
+                person.person_embedding = json.dumps(person_embedding.tolist())
+                try:
+                    db.session.commit()
+                    persons = Embeddings.query.order_by(Embeddings.second_name).all()
+                    emb_arr = []
+                    index_arr = []
+                    for p in persons:
+                        emb_arr.append(json.loads(p.person_embedding))
+                        index_arr.append(p.id)
+                    write_annoy(emb_arr, index_arr)
+                    return render_template("edit_person.html", person=person, edited=True, photo_err=False,
+                                           photo_edit=True)
+                except:
+                    return "При добавлении человека произошла ошибка"
+            else:
+                return render_template("edit_person.html", person=person, edited=False, photo_err=True,
+                                       photo_edit=False)
+    else:
+        return render_template("edit_person.html", person=person, edited=False, photo_err=False, photo_edit=False)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+    # db.create_all()
+
+# -------------------------------------
+#
+# from skimage import io
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from neural_networks.do_embedding import do_embedding
+# from neural_networks.predict_age import predict_age
+# from neural_networks.predict_gender import predict_gender
+# from neural_networks.predict_person import predict_person
+# from neural_networks.write_annoy import write_annoy
+# from neural_networks.read_annoy import read_annoy
+# from work_with_cam.crop_rectangle import crop_rectangle
+# from keras.models import load_model
+#
+# embedding_model = load_model('./neural_networks/models/BASE_MODEL.h5')
+# age_model = load_model('./neural_networks/models/AGE_PART.h5')
+# gender_model = load_model('./neural_networks/models/FEMALE_MALE_PART.h5')
+# person_model = load_model('./neural_networks/models/PERSONALITY_PART.h5')
+#
+# img = io.imread("./temp_photos/3faces.jpg")
+# faces = crop_rectangle(img)
+# if faces is not None:
+#     img = np.array(faces) / 255
+#
+#     embedding = do_embedding(embedding_model, [img])
+#     age = predict_age(age_model, embedding)
+#     gender = predict_gender(gender_model, embedding)
+#     person_embedding = predict_person(person_model, embedding)
+#     indices = [0, 2, 5]  # индексы с базы
+#     all_embeddings = person_embedding  # все эмбединги с базы
+#     write_annoy(all_embeddings, indices)  # вызывается только при добавлении/удалении в базе
+#     annoy_index = read_annoy(person_embedding)
+#
+#     print("Возраст: ", age)
+#     print("Пол: ", gender)
+#     print("Индекс ближайшего в базе: ", annoy_index)
+#     print("Размерность эмбедингов: ", np.array(person_embedding).shape)
+#
+#     for im in img:
+#         plt.imshow(im)
+#         plt.show()
+# else:
+#     print("No faces!")
